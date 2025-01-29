@@ -1,24 +1,21 @@
-// object to represent file system
+#!/usr/bin/env node
+
 const fileSystem = {
     root: {}
 };
 
-// helper to split path into parts
 function splitPath(path) {
     return path.split('/').filter(part => part.length > 0);
 }
 
-// helper to find a dir and its parent
 function findDirectory(path) {
     const parts = splitPath(path);
     let current = fileSystem.root;
     
-    // for root level dirs
     if (parts.length === 1) {
         return [parts[0], fileSystem.root];
     }
     
-    // for nested dirs, traverse to the parent
     for (let i = 0; i < parts.length - 1; i++) {
         const part = parts[i];
         if (!(part in current)) {
@@ -30,7 +27,6 @@ function findDirectory(path) {
     return [parts[parts.length - 1], current];
 }
 
-// create a dir
 function create(path) {
     const parts = splitPath(path);
     let current = fileSystem.root;
@@ -43,40 +39,31 @@ function create(path) {
     }
 }
 
-// move a dir
 function move(source, target) {
-    const foundSource = findDirectory(source);
-    const sourceName = foundSource[0];
-    const sourceParent = foundSource[1];
+    const [ sourceName, sourceParent ] = findDirectory(source);
     
     if (!sourceParent || !(sourceName in sourceParent)) {
-        console.log(`Can't move ${source} - path does not exist`);
+        console.log(`Cannot move ${source} - path does not exist`);
         return;
     }
-    
-    // get tgt dir
+
     let targetParent = fileSystem.root;
     const targetParts = splitPath(target);
     
-    // navigate to tgt dir
     for (const part of targetParts) {
         if (!(part in targetParent)) {
-            console.log(`Can't move ${source} - target path does not exist`);
+            console.log(`Cannot move ${source} - target path does not exist`);
             return;
         }
         targetParent = targetParent[part];
     }
     
-    // move dir
     targetParent[sourceName] = sourceParent[sourceName];
     delete sourceParent[sourceName];
 }
 
-// delete a directory
 function deleteDir(path) {
-    const found = findDirectory(path);
-    const name = found[0];
-    const parent = found[1];
+    const [ name, parent ] = findDirectory(path);
     
     if (!parent || !(name in parent)) {
         console.log(`Cannot delete ${path} - ${splitPath(path)[0]} does not exist`);
@@ -86,7 +73,6 @@ function deleteDir(path) {
     delete parent[name];
 }
 
-// list directories recursively, sorting alphabetically
 function listDirectories(dir = fileSystem.root, indent = '') {
     if (Object.keys(dir).length === 0) {
         return;
@@ -99,11 +85,10 @@ function listDirectories(dir = fileSystem.root, indent = '') {
     }
 }
 
-// process input using readable stream
 let inputBuffer = '';
-
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', (chunk) => {
+const { stdin } = process;
+stdin.setEncoding('utf8');
+stdin.on('data', (chunk) => {
     inputBuffer += chunk;
     const lines = inputBuffer.split('\n');
     
